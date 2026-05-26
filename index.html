@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ขันธ์ 5 & ปฏิจจสมุปบาทแล็บ : เครื่องจำลองกลไกแห่งจิต</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600&family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-color: #faf8f5; /* นุ่มนวล สไตล์ Zen */
+            --text-main: #2c3e50;
+            --text-muted: #5a6c7d;
+            --accent-green: #4a7c59; /* Sage Green */
+            --accent-light: #edf4ee;
+            --screen-bg: #111827; /* ดาร์กโหมดสไตล์ Dashboard */
+            --card-bg: #ffffff;
+            --shadow: rgba(44, 62, 80, 0.05) 0px 4px 20px 0px;
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            
+            /* สีสถานะของวงจร */
+            --color-sati-off: #ef4444; /* แดงเตือนภัย ขาดสติ */
+            --color-sati-on: #10b981;  /* เขียวสงบเย็น มีสติ */
+            --color-neutral: #6b7280;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Prompt', 'Kanit', sans-serif; background-color: var(--bg-color); color: var(--text-main); line-height: 1.6; padding-bottom: 60px; }
+
+        header { background: linear-gradient(135deg, #3d5a45, #4a7c59); color: #ffffff; padding: 40px 20px; text-align: center; }
+        header h1 { font-family: 'Kanit', sans-serif; font-size: 2.2rem; margin-bottom: 8px; font-weight: 600; }
+        header p { font-size: 1rem; opacity: 0.9; max-width: 600px; margin: 0 auto; font-weight: 300; }
+
+       .main-container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+       .section-title { font-family: 'Kanit', sans-serif; font-size: 1.5rem; margin: 40px 0 20px 0; text-align: center; position: relative; padding-bottom: 10px; }
+       .section-title::after { content: ''; position: absolute; bottom: 0; left: 50%; transform: translateX(-50%); width: 40px; height: 3px; background-color: var(--accent-green); border-radius: 2px; }
+
+        /* ==========================================================================
+           1. หน้าจอแสดงผลรวม (Simulation Dashboard)
+           ========================================================================== */
+       .simulation-screen {
+            background-color: var(--screen-bg);
+            color: #f8fafc;
+            border-radius: 24px;
+            padding: 30px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+            margin-bottom: 40px;
+            border: 2px solid #1f2937;
+        }
+        
+       .screen-header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            border-bottom: 1px solid #1f2937; 
+            padding-bottom: 15px; 
+            margin-bottom: 20px; 
+        }
+        
+       .screen-title { 
+            font-family: 'Kanit', sans-serif; 
+            color: #38bdf8; 
+            font-size: 1.25rem; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+        }
+
+        /* ปุ่มสลับโหมด มีสติ / ขาดสติ */
+       .sati-control-panel {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            background: #1f2937;
+            padding: 12px 25px;
+            border-radius: 50px;
+            margin-bottom: 25px;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+       .sati-label {
+            font-size: 0.95rem;
+            font-weight: 500;
+            color: #9ca3af;
+            transition: var(--transition);
+        }
+
+       .sati-label.active {
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+       .switch {
+            position: relative;
+            display: inline-block;
+            width: 55px;
+            height: 28px;
+        }
+
+       .switch input { opacity: 0; width: 0; height: 0; }
+
+       .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: var(--color-sati-off);
+            transition:.4s;
+            border-radius: 34px;
+        }
+
+       .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px; width: 20px;
+            left: 4px; bottom: 4px;
+            background-color: white;
+            transition:.4s;
+            border-radius: 50%;
+        }
+
+        input:checked +.slider {
+            background-color: var(--color-sati-on);
+        }
+
+        input:checked +.slider:before {
+            transform: translateX(27px);
+        }
+
+        /* สรุปสถานะผลรวมด้านบนสุด */
+       .result-box { 
+            background: #030712; 
+            border-radius: 16px; 
+            padding: 20px; 
+            border: 1px solid #1f2937; 
+            margin-bottom: 25px; 
+            transition: var(--transition);
+        }
+        
+       .result-title { 
+            font-family: 'Kanit', sans-serif; 
+            color: #fbbf24; 
+            font-size: 1.1rem; 
+            margin-bottom: 8px; 
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+       .result-text { 
+            color: #e2e8f0; 
+            font-size: 1rem; 
+            line-height: 1.6;
+        }
+
+        /* ผังสายพานขันธ์ 5 (Flow Nodes) */
+       .flow-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); 
+            gap: 12px; 
+            margin-bottom: 25px; 
+        }
+        
+       .flow-node { 
+            background: #111827; 
+            border-radius: 12px; 
+            padding: 15px; 
+            border-top: 4px solid var(--color-neutral); 
+            min-height: 110px; 
+            transition: var(--transition);
+            border-left: 1px solid #1f2937;
+            border-right: 1px solid #1f2937;
+            border-bottom: 1px solid #1f2937;
+        }
+        
+       .flow-node.active-off { 
+            border-top-color: var(--color-sati-off); 
+            background: #1e1b1b; 
+        }
+
+       .flow-node.active-on { 
+            border-top-color: var(--color-sati-on); 
+            background: #061f15; 
+        }
+        
+       .node-name { 
+            font-size: 0.85rem; 
+            color: #9ca3af; 
+            font-weight: 600; 
+            margin-bottom: 6px; 
+        }
+        
+       .node-desc { 
+            font-size: 0.85rem; 
+            color: #cbd5e1; 
+        }
+
+        /* จอกล่องผัสสะด้านล่าง ใกล้ปุ่มกด */
+       .stimulus-box { 
+            background: rgba(56, 189, 248, 0.05); 
+            border: 1px dashed #38bdf8; 
+            padding: 15px; 
+            border-radius: 12px; 
+            margin-bottom: 15px; 
+            font-size: 1.05rem; 
+            color: #e2e8f0; 
+            text-align: center; 
+            min-height: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+       .sim-btn { 
+            display: block; 
+            width: 100%; 
+            max-width: 320px; 
+            margin: 10px auto 0 auto; 
+            background-color: #38bdf8; 
+            color: #0f172a; 
+            border: none; 
+            font-family: 'Prompt', sans-serif; 
+            font-weight: 600; 
+            font-size: 1.05rem; 
+            padding: 12px 24px; 
+            border-radius: 30px; 
+            cursor: pointer; 
+            transition: var(--transition); 
+            text-align: center; 
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2); 
+        }
+        
+       .sim-btn:hover { 
+            background-color: #7dd3fc; 
+            transform: translateY(-2px); 
+        }
+
+        /* ==========================================================================
+           2. เครื่องมือย้อนรอยอารมณ์เชิงลึก (Mind Log Tool)
+           ========================================================================== */
+       .mind-log-section {
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            margin-bottom: 40px;
+            border: 1px solid rgba(0,0,0,0.02);
+        }
+
+       .mind-log-desc {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            margin-bottom: 25px;
+        }
+
+       .emotion-selector {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+
+       .emotion-btn {
+            background: #f3f4f6;
+            border: none;
+            font-family: 'Prompt', sans-serif;
+            font-size: 0.9rem;
+            padding: 8px 18px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: var(--transition);
+            color: var(--text-main);
+        }
+
+       .emotion-btn:hover {
+            background: #e5e7eb;
+            transform: scale(1.02);
+        }
+
+       .emotion-btn.active {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 4px 10px rgba(59, 130, 246, 0.2);
+        }
+
+        /* ผังทรีย้อนกลับ (Reverse-Engineering Tree) */
+       .reverse-tree {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            position: relative;
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+       .tree-step {
+            background: #f8fafc;
+            border-radius: 12px;
+            padding: 15px;
+            border-left: 5px solid #3b82f6;
+            transform: translateY(10px);
+            opacity: 0;
+            transition: all 0.5s ease;
+            display: none;
+        }
+
+       .tree-step.show {
+            display: block;
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+       .step-num {
+            font-size: 0.8rem;
+            color: #3b82f6;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+       .step-factor {
+            font-family: 'Kanit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 500;
+            margin-bottom: 3px;
+        }
+
+       .step-desc {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
+        /* ==========================================================================
+           3. กระดานทรายบำบัด (Sand Mandala)
+           ========================================================================== */
+       .sand-mandala-section {
+            background-color: var(--card-bg);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: var(--shadow);
+            margin-bottom: 40px;
+            border: 1px solid rgba(0,0,0,0.02);
+            text-align: center;
+        }
+
+       .mandala-canvas-container {
+            background-color: #fafaf9;
+            border: 1px solid #e7e5e4;
+            border-radius: 16px;
+            padding: 20px;
+            margin-top: 20px;
+            position: relative;
+        }
+
+       .sand-textarea {
+            width: 100%;
+            height: 120px;
+            background: transparent;
+            border: none;
+            outline: none;
+            resize: none;
+            font-family: 'Prompt', sans-serif;
+            font-size: 1.05rem;
+            color: #44403c;
+            text-align: center;
+            line-height: 1.6;
+            transition: opacity 3s linear;
+        }
+
+       .mandala-btn {
+            background-color: var(--accent-green);
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-family: 'Prompt', sans-serif;
+            font-weight: 500;
+            font-size: 0.95rem;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: var(--transition);
+        }
+
+       .mandala-btn:hover {
+            background-color: #3d5a45;
+        }
+
+       .mandala-feedback {
+            font-size: 0.9rem;
+            color: var(--accent-green);
+            margin-top: 15px;
+            min-height: 25px;
+            font-style: italic;
+        }
+
+        /* ==========================================================================
+           4. ฐานข้อมูลเบญจขันธ์ คลุมระบบนิกายและวิทยาศาสตร์
+           ========================================================================== */
+       .khandha-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 15px; }
+       .khandha-card { background-color: var(--card-bg); border-radius: 16px; padding: 25px 15px; text-align: center; box-shadow: var(--shadow); cursor: pointer; transition: var(--transition); border: 1px solid rgba(0,0,0,0.01); }
+       .khandha-card:hover { transform: translateY(-5px); box-shadow: rgba(44, 62, 80, 0.1) 0px 8px 24px; }
+       .card-number { font-size: 0.85rem; color: var(--accent-green); font-weight: 600; }
+       .card-title-th { font-size: 1.2rem; font-weight: 500; }
+       .card-title-en { font-size: 0.8rem; color: var(--text-muted); }
+
+       .tabs-container { background-color: var(--card-bg); border-radius: 16px; box-shadow: var(--shadow); padding: 25px; margin-bottom: 40px; }
+       .tab-menu { display: flex; justify-content: center; gap: 10px; margin-bottom: 20px; border-bottom: 1px solid #e1e8ed; padding-bottom: 10px; }
+       .tab-btn { background: none; border: none; font-family: 'Prompt', sans-serif; padding: 8px 20px; cursor: pointer; color: var(--text-muted); border-radius: 20px; transition: var(--transition); }
+       .tab-btn.active { background-color: var(--accent-green); color: #ffffff; }
+       .tab-content { display: none; animation: fadeIn 0.4s ease; }
+       .tab-content.active { display: block; }
+       .tab-content h3 { color: var(--accent-green); margin-bottom: 10px; }
+       .tab-content p { color: var(--text-muted); text-align: justify; margin-bottom: 15px; }
+       .tab-content li { margin-left: 20px; margin-top: 5px; color: var(--text-main); }
+
+       .science-section { background-color: #fdfdfd; border-radius: 16px; box-shadow: var(--shadow); padding: 30px; border-left: 5px solid var(--accent-green); }
+       .science-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-top: 20px; }
+       .science-item { background-color: var(--bg-color); padding: 15px; border-radius: 12px; }
+       .science-item h4 { margin-bottom: 6px; border-bottom: 1px dashed #d1dcd3; padding-bottom: 4px; }
+       .science-item p { font-size: 0.9rem; color: var(--text-muted); }
+
+        /* Pop-up / Modal */
+       .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(44, 62, 80, 0.4); display: flex; justify-content: center; align-items: center; opacity: 0; visibility: hidden; transition: opacity 0.3s, visibility 0.3s; z-index: 1000; padding: 20px; }
+       .modal-overlay.active { opacity: 1; visibility: visible; }
+       .modal-box { background-color: var(--card-bg); border-radius: 20px; max-width: 500px; width: 100%; padding: 30px; position: relative; transform: translateY(20px); transition: var(--transition); }
+       .modal-overlay.active.modal-box { transform: translateY(0); }
+       .close-btn { position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 1.4rem; cursor: pointer; color: var(--text-muted); }
+       .info-tag { display: inline-block; background-color: var(--accent-light); color: var(--accent-green); padding: 2px 10px; border-radius: 15px; font-size: 0.8rem; margin-bottom: 10px; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>ขันธ์ 5 & ปฏิจจสมุปบาทแล็บ</h1>
+        <p>ห้องทดลองศึกษาจิตวิเคราะห์เชิงพุทธปรัชญาและกลไกสลายสัญชาตญาณความทุกข์แบบขณะจิตเดียว</p>
+    </header>
+
+    <div class="main-container">
+
+        <section class="simulation-screen">
+            <div class="screen-header">
+                <div class="screen-title">🖥️ ระบบทดลองเหตุปัจจัยแบบข้ามมิติวิทยาศาสตร์</div>
+                <div style="font-size: 0.8rem; color: #64748b;">MOMENT-TO-MOMENT ENGINE</div>
+            </div>
+
+            <div class="sati-control-panel">
+                <span id="label-off" class="sati-label active">ขาดสติ (Avijjā)</span>
+                <label class="switch">
+                    <input type="checkbox" id="satiToggle" onchange="toggleSatiMode()">
+                    <span class="slider"></span>
+                </label>
+                <span id="label-on" class="sati-label">สติสัมปชัญญะ (Sati)</span>
+            </div>
+
+            <div class="result-box">
+                <div class="result-title">🎯 ประเมินสภาวะจิตใจปลายทาง:</div>
+                <div id="resultText" class="result-text" style="color: #94a3b8; font-style: italic;">
+                    รอการประมวลผลสัญญาณจากผัสสะ...
+                </div>
+            </div>
+
+            <div class="flow-grid">
+                <div id="node-rupa" class="flow-node">
+                    <div class="node-name">1. รูป (Rūpa)</div>
+                    <div id="desc-rupa" class="node-desc">-</div>
+                </div>
+                <div id="node-vinnana" class="flow-node">
+                    <div class="node-name">2. วิญญาณ (Viññāṇa)</div>
+                    <div id="desc-vinnana" class="node-desc">-</div>
+                </div>
+                <div id="node-vedana" class="flow-node">
+                    <div class="node-name">3. เวทนา (Vedanā)</div>
+                    <div id="desc-vedana" class="node-desc">-</div>
+                </div>
+                <div id="node-sanna" class="flow-node">
+                    <div class="node-name">4. สัญญา (Saññā)</div>
+                    <div id="desc-sanna" class="node-desc">-</div>
+                </div>
+                <div id="node-sankhara" class="flow-node">
+                    <div class="node-name">5. สังขาร (Saṅkhāra)</div>
+                    <div id="desc-sankhara" class="node-desc">-</div>
+                </div>
+            </div>
+
+            <div id="stimulusText" class="stimulus-box">
+                กดปุ่มสุ่มสัมผัส เพื่อป้อนสิ่งเร้าเข้าสู่ประสาทสัมผัส (อายตนะ)
+            </div>
+
+            <button class="sim-btn" onclick="runSimulation()">🎲 สุ่มสัมผัส (Simulate Contact)</button>
+        </section>
+
+        <section class="mind-log-section">
+            <h2 class="section-title">เครื่องย้อนรอยห่วงโซ่ความทุกข์ (Reverse Mind Logger)</h2>
+            <p class="mind-log-desc">เลือกอารมณ์ลบที่เกิดขึ้นในใจคุณ ระบบปฏิจจสมุปบาทจะทำการสืบสาวเพื่อถอดโค้ดหาจุดต้นตอและกลไกการยึดติด</p>
+            
+            <div class="emotion-selector">
+                <button class="emotion-btn" onclick="triggerMindLog(event, 'work')">💼 เครียดเรื่องงาน</button>
+                <button class="emotion-btn" onclick="triggerMindLog(event, 'angry')">🔥 โกรธที่โดนคนนินทา</button>
+                <button class="emotion-btn" onclick="triggerMindLog(event, 'greed')">💎 อยากได้โทรศัพท์ใหม่</button>
+                <button class="emotion-btn" onclick="triggerMindLog(event, 'lonely')">🍂 เหงาและว้าเหว่</button>
+            </div>
+
+            <div class="reverse-tree" id="treeContainer">
+                <div class="tree-step" id="step-1">
+                    <div class="step-num">ปลายทางกระแสทุกข์ (ชรามรณะ)</div>
+                    <div class="step-factor" id="log-factor-1">-</div>
+                    <div class="step-desc" id="log-desc-1">-</div>
+                </div>
+                <div class="tree-step" id="step-2">
+                    <div class="step-num">อัตตาหรือภาพจินตนาการตนเอง (ชาติ)</div>
+                    <div class="step-factor" id="log-factor-2">-</div>
+                    <div class="step-desc" id="log-desc-2">-</div>
+                </div>
+                <div class="tree-step" id="step-3">
+                    <div class="step-num">ความยึดมั่นถือมั่นและชุดคุณค่า (อุปาทาน)</div>
+                    <div class="step-factor" id="log-factor-3">-</div>
+                    <div class="step-desc" id="log-desc-3">-</div>
+                </div>
+                <div class="tree-step" id="step-4">
+                    <div class="step-num">แรงผลักดันความทะยานอยาก (ตัณหา)</div>
+                    <div class="step-factor" id="log-factor-4">-</div>
+                    <div class="step-desc" id="log-desc-4">-</div>
+                </div>
+                <div class="tree-step" id="step-5">
+                    <div class="step-num">สแกนสิ่งกระทบและตีความหมาย (เวทนา & สัญญา)</div>
+                    <div class="step-factor" id="log-factor-5">-</div>
+                    <div class="step-desc" id="log-desc-5">-</div>
+                </div>
+            </div>
+        </section>
+
+        <section class="sand-mandala-section">
+            <h2 class="section-title">กระดานละอองทราย อนิจจังบำบัด (Sand Mandala Board)</h2>
+            <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 10px;">พิมพ์ข้อเขียน ความยึดมั่น หรือความทุกข์ใจของคุณลงบนกระดานทรายดิจิทัล</p>
+            <div class="mandala-canvas-container">
+                <textarea id="sandText" class="sand-textarea" placeholder="ระบายความยึดติดของคุณที่นี่..."></textarea>
+                <button class="mandala-btn" onclick="eraseMandala()">🍃 สลายและปล่อยวางด้วยปัญญา</button>
+                <div id="mandalaFeedback" class="mandala-feedback"></div>
+            </div>
+        </section>
+
+        <section>
+            <h2 class="section-title">ฐานข้อมูลวิเคราะห์ขันธ์ 5</h2>
+            <div class="khandha-grid">
+                <div class="khandha-card" onclick="openModal('rupa')">
+                    <div class="card-number">01</div><div class="card-title-th">รูปขันธ์</div><div class="card-title-en">Rūpa / Form</div>
+                </div>
+                <div class="khandha-card" onclick="openModal('vedana')">
+                    <div class="card-number">02</div><div class="card-title-th">เวทนาขันธ์</div><div class="card-title-en">Vedanā / Sensation</div>
+                </div>
+                <div class="khandha-card" onclick="openModal('sanna')">
+                    <div class="card-number">03</div><div class="card-title-th">สัญญาขันธ์</div><div class="card-title-en">Saññā / Perception</div>
+                </div>
+                <div class="khandha-card" onclick="openModal('sankhara')">
+                    <div class="card-number">04</div><div class="card-title-th">สังขารขันธ์</div><div class="card-title-en">Saṅkhāra / Formations</div>
+                </div>
+                <div class="khandha-card" onclick="openModal('vinnana')">
+                    <div class="card-number">05</div><div class="card-title-th">วิญญาณขันธ์</div><div class="card-title-en">Viññāṇa / Consciousness</div>
+                </div>
+            </div>
+        </section>
+
+        <section style="margin-top: 40px;">
+            <h2 class="section-title">ปรัชญาและวิทยาศาสตร์สากล</h2>
+            <div class="tabs-container">
+                <div class="tab-menu">
+                    <button class="tab-btn active" onclick="switchTab(event, 'theravada')">วิสุทธิมรรค vs ขณะเดียว</button>
+                    <button class="tab-btn" onclick="switchTab(event, 'mahayana')">นาคารชุน & ควอนตัมฟิสิกส์</button>
+                    <button class="tab-btn" onclick="switchTab(event, 'vajrayana')">ทฤษฎีระบบทั่วไป</button>
+                </div>
+                
+                <div id="theravada" class="tab-content active">
+                    <h3>การปะทะทางทัศนะเรื่องเวลา</h3>
+                    <p>ในพุทธศาสตร์สากล มีการโต้แย้งระหว่างสองแบบแผนการอธิบายปฏิจจสมุปบาท:</p>
+                    <ul>
+                        <li><strong>โมเดล 3 ช่วงชีวิต (วิสุทธิมรรค):</strong> อธิบายแบบเชิงเส้นข้ามภพภูมิ โดยมองว่าอวิชชาและสังขารอยู่ในชาติปางก่อน ส่งผลให้เกิดขันธ์ 5 ในชาติปัจจุบัน และสืบต่อไปยังชาติหน้า [1, 2]</li>
+                        <li><strong>โมเดลขณะจิตเดียว (พุทธทาสภิกขุ / ป.อ. ปยุตโต):</strong> อธิบายว่ากระแสปัจจัยทำงานหมุนวนสมบูรณ์แบบครบวงโคจรในหนึ่งชั่วลัดนิ้วมือเมื่อได้รับผัสสะ โดยความเกิดและตายที่แท้จริงคือความเกิด-ตายของ "ตัวกู-ของกู" (อัตตา) ในทุกครั้งที่มีความตระหนึกรู้ด้วยอุปาทาน [2, 3]</li>
+                    </ul>
+                </div>
+                
+                <div id="mahayana" class="tab-content">
+                    <h3>ความว่างของนาคารชุน & กลศาสตร์ควอนตัมสัมพัทธ์</h3>
+                    <p>ท่านนาคารชุน (Madhyamaka) อธิบายว่า สรรพสิ่งเป็น "สุญญตา" (Śūnyatā) คือความว่างเปล่าจากแก่นสารในตัวเองอันเป็นเอกเทศ ทุกอย่างดำรงอยู่แบบอิงอาศัยปฏิจจสมุปบาท [4, 5]</p>
+                    <ul>
+                        <li><strong>ฟิสิกส์ควอนตัมแบบสัมพันธ์ (Relational Quantum Mechanics):</strong> ศาสตราจารย์ คาร์โล โรเวลลี (Carlo Rovelli) ชี้ว่าในระดับควอนตัม วัตถุฟิสิกส์ไม่มีคุณสมบัติที่แน่นอนเดี่ยวๆ ก่อนเกิดการโต้ตอบ สภาวะจะปรากฏขึ้นก็ต่อเมื่อสัมพันธ์กับระบบอื่นเท่านั้น [5, 6]</li>
+                        <li><strong>จุดเชื่อมโยง:</strong> ไม่มีสภาวะ "ตัวตนที่คงที่ในตัวเอง" (Lack of svabhāva) โลกไม่ใช่กลุ่มวัตถุเดี่ยวแยกชิ้น แต่เป็นเครือข่ายของความสัมพันธ์ [6, 7]</li>
+                    </ul>
+                </div>
+                
+                <div id="vajrayana" class="tab-content">
+                    <h3>ทฤษฎีระบบทั่วไป (General Systems Theory)</h3>
+                    <p>ดร. โจแอนนา เมซี (Joanna Macy) บุกเบิกการประสานความร่วมมือระหว่างปฏิจจสมุปบาทและทฤษฎีระบบในโลกตะวันตก: [8, 9]</p>
+                    <ul>
+                        <li><strong>ปัจจัยสัมพันธ์สองทิศทาง (Mutual Causality):</strong> การปฏิเสธระบบเหตุปัจจัยเชิงเส้นตรง (Linear Causality) แต่ชี้ให้เห็นว่าสรีรวิทยา จิตใจ สังคม และสิ่งแวดล้อมต่างหนุนเนื่องกันเหมือนวงรอบป้อนกลับ (Feedback Loops) [8, 10]</li>
+                        <li><strong>จริยธรรมเชิงนิเวศ (Eco-Dharma):</strong> ชี้ให้เห็นว่าความต้องการควบคุมธรรมชาติที่เกินพอดี (ตัณหา) สร้างความเสื่อมโทรมต่อระบบนิเวศและส่งผลสะท้อนย้อนกลับมาทำร้ายความมั่นคงทางจิตวิญญาณของมนุษย์ [11, 12, 13]</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section class="science-section">
+            <h2 class="section-title">การประมวลผลข้อมูลของระบบสมอง (Cognitive Loop)</h2>
+            <div class="science-grid">
+                <div class="science-item"><h4>Physiology (รูป)</h4><p>ประสาทรับสัญญาณดิบทางชีวภาพ (Sensory Input)</p></div>
+                <div class="science-item"><h4>Affective Valence (เวทนา)</h4><p>สมองส่วนอะมิกดะลาตรวจสอบความปลอดภัย ปักธงสัญชาตญาณชอบ/ไม่ชอบ</p></div>
+                <div class="science-item"><h4>Cognitive Categorization (สัญญา)</h4><p>สมองส่วนบันทึกความจำดึงข้อมูลอดีตมาเพื่อจำแนกชิ้นงานสิ่งเร้า</p></div>
+                <div class="science-item"><h4>Executive Volition (สังขาร)</h4><p>สมองส่วนหน้าปรุงแต่งความตั้งใจและอารมณ์เพื่อเตรียมการแสดงออก</p></div>
+            </div>
+        </section>
+
+    </div>
+
+    <div id="khandhaModal" class="modal-overlay" onclick="closeModalOutside(event)">
+        <div class="modal-box">
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+            <div class="modal-header">
+                <span id="modalTag" class="info-tag">-</span>
+                <h2 id="modalTitleTh">-</h2>
+                <div id="modalTitleEn" style="font-size: 0.9rem; color: var(--text-muted); margin-bottom: 15px;">-</div>
+            </div>
+            <div class="modal-body">
+                <p id="modalDesc">-</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // สถานะของสติ
+        let isSatiMode = false;
+
+        function toggleSatiMode() {
+            isSatiMode = document.getElementById('satiToggle').checked;
+            const labelOff = document.getElementById('label-off');
+            const labelOn = document.getElementById('label-on');
+            
+            if (isSatiMode) {
+                labelOff.classList.remove('active');
+                labelOn.classList.add('active');
+            } else {
+                labelOff.classList.add('active');
+                labelOn.classList.remove('active');
+            }
+        }
+
+        // คลังจำลองสถานการณ์ตามกฎปฏิจจสมุปบาทขณะจิตเดียว
+        const simulations = [
+            {
+                event: "👁️ จักษุสัมผัส: สายตาหันไปเห็น 'งูเห่า' กำลังแผ่แม่เบี้ยอยู่ตรงหน้า!",
+                rupa: "ตากระทบภาพงู (รูปารมณ์)",
+                vinnana: "จักขุวิญญาณรับรู้ภาพ",
+                vedana: "ทุกข์เวทนา (ตระหนกหวาดกลัวอย่างรุนแรง)",
+                sanna: "จำได้ว่างูมีพิษร้ายแรงถึงตายได้ (ตีความจากความจำอดีต)",
+                sankharaOff: "เกิดโทสะ ปรุงแต่งความกลัว สั่นสะท้าน อยากวิ่งหนี",
+                sankharaOn: "กำหนดรู้เท่าทันความกลัว จิตตื่นรู้เห็นสภาวะสั่นไหวโดยไม่ปรุงแต่งต่อ",
+                summaryOff: "🚨 ขาดสติ (อวิชชา): กระแสไหลเข้าสู่ ตัณหา -> อุปาทาน -> ภพ -> ชาติ เกิดความรู้สึก 'ตัวเรากำลังจะตาย' จิตกวัดแกว่งเร่าร้อนเป็นทุกข์ยิ่งยวด",
+                summaryOn: "✨ มีสติ (วิปัสสนา): ตัดวงจรที่ 'เวทนา' ดับตัณหาอุปาทานทันที จิตเห็นว่า 'ความกลัว' ก็สักว่าเกิดดับ ไม่มีสภาวะสัตว์บุคคลตัวตนหลงเหลืออยู่ เป็นอนัตตาสุญญตา"
+            },
+            {
+                event: "👂 โสตสัมผัส: ได้ยินเสียงคลื่นคำนินทาและว่าร้ายตัวเราดังแว่วมา",
+                rupa: "หูกระทบคลื่นความถี่เสียงพูด (สัททารมณ์)",
+                vinnana: "โสตวิญญาณรับรู้คลื่นเสียง",
+                vedana: "ทุกข์เวทนา (รู้สึกอึดอัด ขัดเคืองใจ)",
+                sanna: "แปลความหมายว่ากำลังโดนด่าทอทำร้ายชื่อเสียง",
+                sankharaOff: "เกิดปฏิฆะ (โทสะ) ปรุงแต่งความขุ่นเคือง วางแผนอยากด่าตอบ",
+                sankharaOn: "กำหนดรู้อาการขุ่นมัวที่หน้าอก วางใจเป็นกลางต่อเสียงพยัญชนะที่ผ่านไป",
+                summaryOff: "🚨 ขาดสติ (อวิชชา): กระแสไหลเข้าสู่ อุปาทาน ยึดถือในตัวตนและชื่อเสียงของตน (มานะ) เกิดความดิ้นรนเผาร้อน สังสารวัฏทางจิตเกิดขึ้นทันที",
+                summaryOn: "✨ มีสติ (วิปัสสนา): ดับตัณหาและอุปาทานที่ 'เวทนา' จิตเข้าใจว่า 'เสียง' ก็ดับไปแล้วในอากาศ 'ตัวเราที่โกรธ' ก็ดับไป ไม่มีที่ตั้งให้ความทุกข์เกาะกุม"
+            },
+            {
+                event: "👃 ฆานสัมผัส: เดินผ่านกองขยะปฏิกูลโชยกลิ่นเหม็นเน่าคละคลุ้ง",
+                rupa: "จมูกกระทบโมเลกุลกลิ่นเหม็น (คันธารมณ์)",
+                vinnana: "ฆานวิญญาณรับรู้กลิ่น",
+                vedana: "ทุกข์เวทนา (อึดอัดทางกาย)",
+                sanna: "จำได้ระบุชี้ชัดว่าเป็นกลิ่นเศษอาหารเน่าเสีย",
+                sankharaOff: "เกิดโทสะแบบอ่อนๆ ปรุงแต่งความหงุดหงิด เกลียดกลิ่นนี้",
+                sankharaOn: "สักว่ารู้กลิ่นกายภาพ ไม่เอาจิตไปปฏิฆะเคียดแค้นใส่กลิ่นขยะ",
+                summaryOff: "🚨 ขาดสติ (อวิชชา): เกิดวิภวตัณหา (ไม่อยากให้กลิ่นนี้มีอยู่) ยึดมั่นในความสบายของกาย เกิดความอึดอัดใจทับซ้อนความอึดอัดกาย",
+                summaryOn: "✨ มีสติ (วิปัสสนา): แยกแยะว่า ทุกขเวทนาทางกายเกิดตามธรรมชาติรูป-นาม แต่ไม่มีตัณหาปรุงแต่งความทุกข์ใจ ทันทีที่เดินพ้นกลิ่นก็ดับลงอย่างไร้ร่องรอย"
+            },
+            {
+                event: "👅 ชิวหาสัมผัส: ตักรสหวานละมุนเข้มข้นของช็อกโกแลตลาวาเข้าปาก",
+                rupa: "ลิ้นกระทบสารเคมีรสหวานมัน (รสารมณ์)",
+                vinnana: "ชิวหาวิญญาณรับรู้รสชาติ",
+                vedana: "สุขเวทนา (ซาบซ่านพึงพอใจ)",
+                sanna: "ตีความและแปะป้ายว่าเป็นรสช็อกโกแลตเกรดพรีเมียมที่ชอบ",
+                sankharaOff: "เกิดโลภะ ปรุงแต่งความเพลิดเพลิน เคลิบเคลิ้ม อยากกินคำต่อไป",
+                sankharaOn: "เห็นความติดใจพึงพอใจเกิดขึ้นแล้วดับไป รู้รสหวานตามสภาวะชีวภาพ",
+                summaryOff: "🚨 ขาดสติ (อวิชชา): กระแสพุ่งเข้าสู่ กามตัณหา (อยากเสพรสอีก) เกิดความยึดมั่นยึดเหนี่ยวในรสสัมผัสสะสมเป็นอาสวกิเลสในอนาคต",
+                summaryOn: "✨ มีสติ (วิปัสสนา): ดับกระแสตัณหาตั้งแต่ขั้นเสวยเวทนา จิตเห็นไตรลักษณ์ในรสสัมผัสว่าเกิดขึ้นแล้วจางคลาย ดับกิเลสโลภะไม่ให้ครอบงำใจ"
+            },
+            {
+                event: "🧠 มโนสัมผัส: นั่งสมาธิเงียบๆ แล้วจิตแวบนึกถึงเหตุการณ์คำชมเชยที่ได้รับเมื่อวานนี้",
+                rupa: "หทัยวัตถุและระบบสมองทำงานตื่นตัว (ธรรมารมณ์)",
+                vinnana: "มโนวิญญาณรับรู้ภาพจำในใจ",
+                vedana: "สุขเวทนา (รู้สึกจิตใจอิ่มเอิบฟูขึ้น)",
+                sanna: "ดึงสัญญาภาพความสุขและคำเยินยอในอดีตมาฉายซ้ำ",
+                sankharaOff: "เกิดราคะ/มานะ ปรุงแต่งอารมณ์พึงพอใจ พองตัวตนว่าเก่งกาจกว่าคนอื่น",
+                sankharaOn: "กำหนดรู้ทันภาพนึกคิดและจิตที่ฟูขึ้น รู้ทันว่าภาพผ่านไปแล้วไม่มีจริง",
+                summaryOff: "🚨 ขาดสติ (อวิชชา): ก่อเกิดภวตัณหา (อยากเป็นคนสำคัญ) ยึดติดในคำเยินยอสะสมตัวตนอัตตา (มานะ) จิตสร้างโลกจำลองขังตัวเองไว้ในอดีต",
+                summaryOn: "✨ มีสติ (วิปัสสนา): รู้เท่าทันจิตที่ปรุงแต่งฟูขึ้น ภาพนิมิตในใจสักว่าภาพลวงตากระทบแล้วดับ ดับภพดับชาติของความพองตน จิตคงความสงบนิ่งบริสุทธิ์"
+            }
+        ];
+
+        // รันสุ่มและจำลองกระแสธรรม
+        function runSimulation() {
+            const randomIndex = Math.floor(Math.random() * simulations.length);
+            const sim = simulations[randomIndex];
+
+            // ลบสีเดิมออกก่อน
+            const nodes = document.getElementsByClassName('flow-node');
+            for (let node of nodes) {
+                node.classList.remove('active-off', 'active-on');
+            }
+
+            // แสดงหัวข้อผัสสะ
+            document.getElementById('stimulusText').innerHTML = `<strong>สิ่งเร้าปัจจุบัน:</strong> ${sim.event}`;
+
+            // รายงานผลตามโหมด สติ / ขาดสติ
+            document.getElementById('desc-rupa').innerText = sim.rupa;
+            document.getElementById('desc-vinnana').innerText = sim.vinnana;
+            document.getElementById('desc-vedana').innerText = sim.vedana;
+            document.getElementById('desc-sanna').innerText = sim.sanna;
+
+            const resultBox = document.getElementById('resultText');
+
+            if (isSatiMode) {
+                // โหมดมีสติสัมปชัญญะ (Sati ON)
+                document.getElementById('desc-sankhara').innerText = sim.sankharaOn;
+                resultBox.innerText = sim.summaryOn;
+                resultBox.style.color = "var(--color-sati-on)";
+                
+                for (let node of nodes) {
+                    node.classList.add('active-on');
+                }
+            } else {
+                // โหมดขาดสติ อวิชชา (Sati OFF)
+                document.getElementById('desc-sankhara').innerText = sim.sankharaOff;
+                resultBox.innerText = sim.summaryOff;
+                resultBox.style.color = "var(--color-sati-off)";
+                
+                for (let node of nodes) {
+                    node.classList.add('active-off');
+                }
+            }
+        }
+
+        // ==========================================================================
+        // ระบบจำลองย้อนรอยห่วงโซ่อารมณ์ลบ (Mind Logging Tools)
+        // ==========================================================================
+        const mindLogDatabase = {
+            work: {
+                f1: "ชรามรณะ (ทุกข์ปัจจุบัน): กังวล หวาดหวั่นใจ สรีรวิทยาตึงเครียด นอนไม่หลับ",
+                f2: "ชาติ (ความเกิดของอัตตา): มีจินตนาการถึงภาพ 'ตัวกูผู้ล้มเหลวและหมดอนาคต' ปรากฏในหัว",
+                f3: "อุปาทาน (ความยึดถือ): ยึดติดในกรอบว่า 'กูต้องเก่ง ห้ามโดนตำหนิ ห้ามล้มเหลวเด็ดขาด'",
+                f4: "ตัณหา (ความยาก): แสวงหาความสมบูรณ์แบบเพื่อหลีกหนีความเป็นจริงของความประเมินลบ",
+                f5: "เวทนา & สัญญา: สมองตีความรูปแผนงานบนจอภาพคอมพิวเตอร์ว่าเป็นแรงคุกคามสวัสดิภาพชีวิต"
+            },
+            angry: {
+                f1: "ชรามรณะ (ทุกข์ปัจจุบัน): ร้อนรุ่ม อกสั่น ปวดหัว อยากด่าโต้ตอบกลับทันที",
+                f2: "ชาติ (ความเกิดของอัตตา): เกิดภาพ 'ตัวกูผู้กำลังถูกย่ำยีเกียรติยศและดูถูกศักดิ์ศรี'",
+                f3: "อุปาทาน (ความยึดถือ): ยึดติดในคุณค่าว่า 'ทุกคนต้องเห็นพ้องและพูดดีๆ กับเราเสมอ'",
+                f4: "ตัณหา (ความยาก): ทะยานอยากให้คำพูดลบสูญสลายไป ไม่อยากฟังเสียงขัดแย้งประสาทหู",
+                f5: "เวทนา & สัญญา: หูกระทบคลื่นความถี่เสียง สัญญาดึงไฟล์อดีตมาชี้ป้ายว่านี่คือ 'การโจมตีตัวเรา'"
+            },
+            greed: {
+                f1: "ชรามรณะ (ทุกข์ปัจจุบัน): กระสับกระส่าย รู้สึกขาดพร่อง ทนใช้ของเดิมไม่ได้",
+                f2: "ชาติ (ความเกิดของอัตตา): ก่อร่างภาพ 'ตัวกูผู้ทันสมัยและโก้หรูเมื่อได้ครอบครองสัมผัสใหม่'",
+                f3: "อุปาทาน (ความยึดถือ): บรรทัดฐานทางวัตถุนิยม 'วัตถุแบรนด์เนมบ่งบอกคุณค่าความสุขของมนุษย์'",
+                f4: "ตัณหา (ความยาก): กระหายใคร่อยากได้วัตถุที่ยังไม่มี (กามตัณหา / ภวตัณหา)",
+                f5: "เวทนา & สัญญา: ตากระทบภาพแอดโฆษณา สัญญาตีตราตามค่านิยมสื่อว่าคือเครื่องหมายความร่ำรวย"
+            },
+            lonely: {
+                f1: "ชรามรณะ (ทุกข์ปัจจุบัน): อ้างว้าง รู้สึกโดดเดี่ยว จิตห่อเหี่ยวและเหงาจับใจ",
+                f2: "ชาติ (ความเกิดของอัตตา): เกิดความรู้สึกว่า 'ตัวฉันคือผู้ถูกทอดทิ้งและไม่มีใครต้องการ'",
+                f3: "อุปาทาน (ความยึดถือ): ยึดมั่นว่า 'ความสุขต้องเกิดจากการถูกรักและสนใจโดยคนรอบตัว'",
+                f4: "ตัณหา (ความยาก): ทะยานอยากได้รับการติดต่อ แสวงหาการทักทายและการยอมรับเพื่อกลบทุกข์",
+                f5: "เวทนา & สัญญา: การนั่งอยู่ลำพังท่ามกลางความเงียบ สัญญาหยิบยกความสุขในอดีตมาบีบคั้นปัจจุบัน"
+            }
+        };
+
+        function triggerMindLog(event, id) {
+            const data = mindLogDatabase[id];
+            if (!data) return;
+
+            // นำไฮไลท์เก่าย้ายออก
+            const buttons = document.getElementsByClassName('emotion-btn');
+            for (let btn of buttons) btn.classList.remove('active');
+            event.currentTarget.classList.add('active');
+
+            // ซ่อนกล่องเดิมทั้งหมดเพื่อทำ Animation
+            const steps = document.getElementsByClassName('tree-step');
+            for (let step of steps) {
+                step.classList.remove('show');
+            }
+
+            // ใส่ข้อความลงกล่อง
+            document.getElementById('log-factor-1').innerText = data.f1;
+            document.getElementById('log-factor-2').innerText = data.f2;
+            document.getElementById('log-factor-3').innerText = data.f3;
+            document.getElementById('log-factor-4').innerText = data.f4;
+            document.getElementById('log-factor-5').innerText = data.f5;
+
+            // ค่อยๆ แสดงกล่องทีละขั้นเลียนแบบการย้อนรอยกระแสอวิชชา
+            let delay = 0;
+            for (let step of steps) {
+                setTimeout(() => {
+                    step.classList.add('show');
+                }, delay);
+                delay += 250;
+            }
+        }
+
+        // ==========================================================================
+        // ระบบกระดานอนิจจัง (Digital Sand Mandala Canvas)
+        // ==========================================================================
+        function eraseMandala() {
+            const textElement = document.getElementById('sandText');
+            const feedback = document.getElementById('mandalaFeedback');
+            
+            if (textElement.value.trim() === "") {
+                feedback.innerText = "⚠️ โปรดเขียนพิมพ์ความยึดติดของจิตลงบนพื้นที่ว่างก่อนสลาย...";
+                return;
+            }
+
+            feedback.innerText = "🧘 จิตกำลังสลัดอารมณ์... ละอองทรายแห่งความยึดติดกำลังสลายจางหายไปสู่สุญญตา";
+            textElement.style.opacity = 0;
+
+            // สลายความยึดถือ
+            setTimeout(() => {
+                textElement.value = "";
+                textElement.style.opacity = 1;
+                feedback.innerText = "✨ ดับความยึดมั่นสำเร็จ! ทุกสรรพสิ่งทนอยู่ในสภาพเดิมไม่ได้ เกิดขึ้น ตั้งอยู่ ดับไปเป็นธรรมดา";
+            }, 3000);
+        }
+
+        // ==========================================================================
+        // ข้อมูลคลังพื้นฐาน (ฐานข้อมูลปรีชาญาณ)
+        // ==========================================================================
+        const khandhaData = {
+            rupa: { titleTh: 'รูปขันธ์', titleEn: 'Rūpa / Form', tag: 'รูปธรรม', desc: 'ส่วนที่เป็นร่างกาย พฤติกรรม และสสารทุกรูปแบบ รวมถึงระบบประสาทและอายตนะทั้ง 5 เป็นฐานกายภาพหลักในการรับแรงกระทบจากโลกภายนอก' },
+            vedana: { titleTh: 'เวทนาขันธ์', titleEn: 'Vedanā / Sensation', tag: 'นามธรรม', desc: 'กระบวนการเสวยอารมณ์ หรือความรู้สึกที่เกิดขึ้นทันทีเมื่ออายตนะกระทบสิ่งเร้า แบ่งเป็น สุข, ทุกข์ หรือ เฉยๆ เกิดขึ้นรวดเร็วในระดับใต้สำนึก' },
+            sanna: { titleTh: 'สัญญาขันธ์', titleEn: 'Saññā / Perception', tag: 'นามธรรม', desc: 'ความจำได้หมายรู้ ทำหน้าที่จดจำ ค้นหาคลังข้อมูลในอดีตมาแปะป้ายชื่อ และตีความสิ่งเร้าที่กำลังเผชิญหน้าอยู่' },
+            sankhara: { titleTh: 'สังขารขันธ์', titleEn: 'Saṅkhāra / Formations', tag: 'นามธรรม', desc: 'องค์ประกอบทางจิตที่ปรุงแต่งจิตให้ดีหรือชั่ว ก่อเกิดเป็นเจตนา อารมณ์ (เช่น โกรธ, โลภ, หลง, หรือเมตตา) ซึ่งเป็นจุดเริ่มต้นของกรรม' },
+            vinnana: { titleTh: 'วิญญาณขันธ์', titleEn: 'Viññāṇa / Consciousness', tag: 'นามธรรม', desc: 'ระบบการรับรู้แจ้งในอารมณ์ผ่านช่องทางทั้ง 6 (ตา หู จมูก ลิ้น กาย ใจ) เป็นเหมือนฉากหลังที่ทำให้ขันธ์อื่นๆ ทำงานได้' }
+        };
+
+        function openModal(id) {
+            const data = khandhaData[id];
+            if (!data) return;
+            document.getElementById('modalTitleTh').innerText = data.titleTh;
+            document.getElementById('modalTitleEn').innerText = data.titleEn;
+            document.getElementById('modalTag').innerText = data.tag;
+            document.getElementById('modalDesc').innerText = data.desc;
+            document.getElementById('khandhaModal').classList.add('active');
+        }
+        function closeModal() { 
+            document.getElementById('khandhaModal').classList.remove('active'); 
+        }
+        function closeModalOutside(e) { 
+            if (e.target.id === 'khandhaModal') closeModal(); 
+        }
+        
+        function switchTab(e, tabId) {
+            const contents = document.getElementsByClassName('tab-content');
+            for (let c of contents) c.classList.remove('active');
+            const btns = document.getElementsByClassName('tab-btn');
+            for (let b of btns) b.classList.remove('active');
+            document.getElementById(tabId).classList.add('active');
+            e.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+</html>
